@@ -1,0 +1,127 @@
+class YCL_SHOW_SALV definition
+  public
+  create public .
+
+public section.
+
+  class-methods SHOW_SALV
+    importing
+      !IV_TITLE type LVC_TITLE
+      !IV_REPORT type SYREPID
+      !IR_SALV type ref to DATA .
+protected section.
+private section.
+
+  class-data GO_SALV_TABLE type ref to CL_SALV_TABLE .
+
+  class-methods SET_SALV_FRAMEWORK
+    importing
+      !IR_SALV type DATA .
+  class-methods SET_FUNCTIONS .
+  class-methods SET_COLUMNS .
+  class-methods SET_DISPLAY
+    importing
+      !IV_TITLE type LVC_TITLE
+      !IV_REPORT type SYREPID .
+ENDCLASS.
+
+
+
+CLASS YCL_SHOW_SALV IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method YCL_SHOW_SALV=>SET_COLUMNS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_columns.
+
+    DATA(lo_columns) = go_salv_table->get_columns( ). "Get columns setting
+    lo_columns->set_optimize( ).               "Set optimize columns
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method YCL_SHOW_SALV=>SET_DISPLAY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_TITLE                       TYPE        LVC_TITLE
+* | [--->] IV_REPORT                      TYPE        SYREPID
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_display.
+
+* Display setting
+    DATA(lo_display_setting) = go_salv_table->get_display_settings( ).
+    lo_display_setting->set_list_header( value = iv_title ). "Set SALV header title
+    lo_display_setting->set_striped_pattern( cl_salv_display_settings=>true ). "Colors striped
+
+* Layout setting
+    DATA(lo_layout) = go_salv_table->get_layout( ).
+
+    lo_layout->set_key( VALUE salv_s_layout_key( report = iv_report )  ).
+    lo_layout->set_save_restriction( if_salv_c_layout=>restrict_none ).
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method YCL_SHOW_SALV=>SET_FUNCTIONS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_functions.
+
+    DATA(lo_functions) = go_salv_table->get_functions( ).
+    lo_functions->set_all( if_salv_c_bool_sap=>true ).
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method YCL_SHOW_SALV=>SET_SALV_FRAMEWORK
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IR_SALV                        TYPE        DATA
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD SET_SALV_FRAMEWORK.
+
+    FIELD-SYMBOLS:
+    <fs_tab> TYPE ANY TABLE.
+
+    ASSIGN ir_salv->* TO <fs_tab>.
+
+    TRY.
+        cl_salv_table=>factory( IMPORTING r_salv_table   = go_salv_table  " Basis Class Simple ALV Tables
+                                CHANGING  t_table        = <fs_tab> ).    " Internal table to display
+      CATCH cx_salv_msg.
+
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_SHOW_SALV=>SHOW_SALV
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_TITLE                       TYPE        LVC_TITLE
+* | [--->] IV_REPORT                      TYPE        SYREPID
+* | [--->] IR_SALV                        TYPE REF TO DATA
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD show_salv.
+
+* Set SALV Framework
+    set_salv_framework( ir_salv = ir_salv ).
+
+* Set default functions setting
+    set_functions( ).
+
+* Set default columns setting
+    set_columns( ).
+
+* Set default display setting
+    set_display( iv_title  = iv_title
+                 iv_report = iv_report ).
+
+* Display SALV
+    go_salv_table->display( ).
+
+  ENDMETHOD.
+ENDCLASS.

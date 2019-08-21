@@ -1,9 +1,13 @@
 # SALV_DISPLAY - Simple SALV Display Version 1.0
 
+Option1 file: YCL_SHOW_SALV.txt -> call static method show_salv -> Only for display ALV.
+
+Option2 file: YCL_SHOW_SALV_INS -> Abstract Class Inherit this class and do Redefinition to Method on_link_click 
+for HOTSPOT action.
+
+Gernal Info. :
 From SAP Netweaver 7.0 & above (Include S/4 HANA)
 
-Execute static method show_salv.
-
-To fill parameter - > IR_SALV type ref to DATA -> Example internal table convert -> GET REFERENCE OF gt_tab INTO IR_SALV.
+fill parameter - > IR_SALV type ref to DATA -> Example internal table convert -> GET REFERENCE OF gt_tab INTO IR_SALV.
 
 Enjoy :)

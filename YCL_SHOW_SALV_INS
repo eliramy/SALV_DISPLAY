@@ -1,0 +1,216 @@
+class YCL_SHOW_SALV_INS definition
+  public
+  create public .
+
+public section.
+
+  methods SHOW_SALV
+    importing
+      !IV_TITLE type LVC_TITLE
+      !IV_REPORT type SYREPID
+      !IR_SALV type ref to DATA
+      !IT_COL_SETTING type YCOL_SETTING_T optional .
+  methods ON_LINK_CLICK
+    for event LINK_CLICK of CL_SALV_EVENTS_TABLE
+    importing
+      !ROW
+      !COLUMN .
+  methods GET_DATA
+    returning
+      value(RO_DATA) type ref to DATA .
+protected section.
+private section.
+
+  data GO_SALV_TABLE type ref to CL_SALV_TABLE .
+  data GO_DATA type ref to DATA .
+
+  methods SET_SALV_FRAMEWORK
+    importing
+      !IR_SALV type DATA .
+  methods SET_FUNCTIONS .
+  methods SET_COLUMNS
+    importing
+      !IT_COL_SETTING type YCOL_SETTING_T .
+  methods SET_DISPLAY
+    importing
+      !IV_TITLE type LVC_TITLE
+      !IV_REPORT type SYREPID .
+ENDCLASS.
+
+
+
+CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_SHOW_SALV_INS->GET_DATA
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RO_DATA                        TYPE REF TO DATA
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_data.
+
+    ro_data = go_data.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_SHOW_SALV_INS->ON_LINK_CLICK
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] ROW                            LIKE
+* | [--->] COLUMN                         LIKE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD on_link_click.
+* method abstract
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method YCL_SHOW_SALV_INS->SET_COLUMNS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_COL_SETTING                 TYPE        YCOL_SETTING_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_columns.
+
+    DATA:
+      lo_column TYPE REF TO cl_salv_column_table.
+
+
+    DATA(lo_columns) = go_salv_table->get_columns( ). "Get columns setting
+    lo_columns->set_optimize( ).               "Set optimize columns
+
+    LOOP AT it_col_setting ASSIGNING FIELD-SYMBOL(<fs_col_setting>).
+
+      lo_column ?= lo_columns->get_column( <fs_col_setting>-col ).
+
+      CASE <fs_col_setting>-tech.
+        WHEN abap_true.
+          lo_column->set_technical( if_salv_c_bool_sap=>true ).
+      ENDCASE.
+
+      CASE <fs_col_setting>-hide.
+        WHEN abap_true.
+          lo_column->set_visible( if_salv_c_bool_sap=>false ).
+
+      ENDCASE.
+
+      CASE <fs_col_setting>-zero.
+        WHEN abap_true.
+          lo_column->set_zero( value = abap_true ).
+
+        WHEN abap_false.
+          lo_column->set_zero( value = abap_false ).
+      ENDCASE.
+
+      CASE <fs_col_setting>-hotspot.
+        WHEN abap_true.
+          TRY.
+              CALL METHOD lo_column->set_cell_type
+                EXPORTING
+                  value = if_salv_c_cell_type=>hotspot.
+
+            CATCH cx_salv_data_error.
+          ENDTRY.
+      ENDCASE.
+
+      IF <fs_col_setting>-alignment IS NOT INITIAL.
+        CALL METHOD lo_column->set_alignment
+          EXPORTING
+            value = <fs_col_setting>-alignment.
+      ENDIF.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method YCL_SHOW_SALV_INS->SET_DISPLAY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_TITLE                       TYPE        LVC_TITLE
+* | [--->] IV_REPORT                      TYPE        SYREPID
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_display.
+
+* Display setting
+    DATA(lo_display_setting) = go_salv_table->get_display_settings( ).
+    lo_display_setting->set_list_header( value = iv_title ). "Set SALV header title
+    lo_display_setting->set_striped_pattern( cl_salv_display_settings=>true ). "Colors striped
+
+* Layout setting
+    DATA(lo_layout) = go_salv_table->get_layout( ).
+
+    lo_layout->set_key( VALUE salv_s_layout_key( report = iv_report )  ).
+    lo_layout->set_save_restriction( if_salv_c_layout=>restrict_none ).
+    lo_layout->set_default( value = abap_true ).
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method YCL_SHOW_SALV_INS->SET_FUNCTIONS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_functions.
+
+    DATA(lo_functions) = go_salv_table->get_functions( ).
+    lo_functions->set_all( if_salv_c_bool_sap=>true ).
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method YCL_SHOW_SALV_INS->SET_SALV_FRAMEWORK
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IR_SALV                        TYPE        DATA
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_salv_framework.
+
+    FIELD-SYMBOLS:
+    <fs_tab> TYPE ANY TABLE.
+
+    go_data = ir_salv.
+
+    ASSIGN ir_salv->* TO <fs_tab>.
+
+    TRY.
+        cl_salv_table=>factory( IMPORTING r_salv_table   = go_salv_table  " Basis Class Simple ALV Tables
+                                CHANGING  t_table        = <fs_tab> ).    " Internal table to display
+      CATCH cx_salv_msg.
+
+    ENDTRY.
+
+    SET HANDLER on_link_click FOR go_salv_table->get_event( ).
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_SHOW_SALV_INS->SHOW_SALV
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_TITLE                       TYPE        LVC_TITLE
+* | [--->] IV_REPORT                      TYPE        SYREPID
+* | [--->] IR_SALV                        TYPE REF TO DATA
+* | [--->] IT_COL_SETTING                 TYPE        YCOL_SETTING_T(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD show_salv.
+
+* Set SALV Framework
+    set_salv_framework( ir_salv = ir_salv ).
+
+* Set default functions setting
+    set_functions( ).
+
+* Set default columns setting
+    set_columns( it_col_setting = it_col_setting ).
+
+* Set default display setting
+    set_display( iv_title  = iv_title
+                 iv_report = iv_report ).
+
+* Display SALV
+    go_salv_table->display( ).
+
+  ENDMETHOD.
+ENDCLASS.

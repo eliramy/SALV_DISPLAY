@@ -1,4 +1,4 @@
-# SALV_DISPLAY - Simple SALV Display Version 1.0
+# SALV_DISPLAY Encapsulation - Simple SALV Display Version 1.0
 
 Option1 file: YCL_SHOW_SALV.txt -> call static method show_salv -> Only for display ALV.
 

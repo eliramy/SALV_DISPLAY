@@ -8,8 +8,9 @@ public section.
     importing
       !IV_TITLE type LVC_TITLE
       !IV_REPORT type SYREPID
-      !IR_SALV type ref to DATA .
-protected section.
+      !IR_SALV type ref to DATA
+      !IT_COL_SETTING type YCOL_SETTING_T optional .
+  PROTECTED SECTION.
 private section.
 
   class-data GO_SALV_TABLE type ref to CL_SALV_TABLE .
@@ -18,7 +19,9 @@ private section.
     importing
       !IR_SALV type DATA .
   class-methods SET_FUNCTIONS .
-  class-methods SET_COLUMNS .
+  class-methods SET_COLUMNS
+    importing
+      !IT_COL_SETTING type YCOL_SETTING_T .
   class-methods SET_DISPLAY
     importing
       !IV_TITLE type LVC_TITLE
@@ -33,11 +36,50 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
 * <SIGNATURE>---------------------------------------------------------------------------------------+
 * | Static Private Method YCL_SHOW_SALV=>SET_COLUMNS
 * +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_COL_SETTING                 TYPE        YCOL_SETTING_T
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_columns.
 
-    DATA(lo_columns) = go_salv_table->get_columns( ). "Get columns setting
-    lo_columns->set_optimize( ).               "Set optimize columns
+    FIELD-SYMBOLS:
+      <fs_col_setting> TYPE ycol_setting_s.
+
+    DATA:
+      lo_column  TYPE REF TO cl_salv_column_table,
+      lo_columns TYPE REF TO cl_salv_columns_table.
+
+    lo_columns = go_salv_table->get_columns( ). "Get columns setting
+    lo_columns->set_optimize( ).                "Set optimize columns
+
+    LOOP AT it_col_setting ASSIGNING <fs_col_setting>.
+
+      lo_column ?= lo_columns->get_column( <fs_col_setting>-col ).
+
+      CASE <fs_col_setting>-tech.
+        WHEN abap_true.
+          lo_column->set_technical( if_salv_c_bool_sap=>true ).
+      ENDCASE.
+
+      CASE <fs_col_setting>-hide.
+        WHEN abap_true.
+          lo_column->set_visible( if_salv_c_bool_sap=>false ).
+
+      ENDCASE.
+
+      CASE <fs_col_setting>-zero.
+        WHEN abap_true.
+          lo_column->set_zero( value = abap_true ).
+
+        WHEN abap_false.
+          lo_column->set_zero( value = abap_false ).
+      ENDCASE.
+
+      IF <fs_col_setting>-alignment IS NOT INITIAL.
+        CALL METHOD lo_column->set_alignment
+          EXPORTING
+            value = <fs_col_setting>-alignment.
+      ENDIF.
+
+    ENDLOOP.
 
   ENDMETHOD.
 
@@ -51,15 +93,24 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
   METHOD set_display.
 
 * Display setting
-    DATA(lo_display_setting) = go_salv_table->get_display_settings( ).
+    DATA:
+      lo_display_setting TYPE REF TO cl_salv_display_settings.
+
+    lo_display_setting = go_salv_table->get_display_settings( ).
     lo_display_setting->set_list_header( value = iv_title ). "Set SALV header title
     lo_display_setting->set_striped_pattern( cl_salv_display_settings=>true ). "Colors striped
 
 * Layout setting
-    DATA(lo_layout) = go_salv_table->get_layout( ).
+    DATA:
+      lo_layout TYPE REF TO cl_salv_layout,
+      ls_key    TYPE salv_s_layout_key.
 
-    lo_layout->set_key( VALUE salv_s_layout_key( report = iv_report )  ).
+    lo_layout = go_salv_table->get_layout( ).
+
+    ls_key-report = iv_report.
+    lo_layout->set_key( ls_key ).
     lo_layout->set_save_restriction( if_salv_c_layout=>restrict_none ).
+    lo_layout->set_default( value = abap_true ).
 
   ENDMETHOD.
 
@@ -70,7 +121,10 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_functions.
 
-    DATA(lo_functions) = go_salv_table->get_functions( ).
+    DATA:
+      lo_functions TYPE REF TO cl_salv_functions_list.
+
+    lo_functions = go_salv_table->get_functions( ).
     lo_functions->set_all( if_salv_c_bool_sap=>true ).
 
   ENDMETHOD.
@@ -81,7 +135,7 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IR_SALV                        TYPE        DATA
 * +--------------------------------------------------------------------------------------</SIGNATURE>
-  METHOD SET_SALV_FRAMEWORK.
+  METHOD set_salv_framework.
 
     FIELD-SYMBOLS:
     <fs_tab> TYPE ANY TABLE.
@@ -104,6 +158,7 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
 * | [--->] IV_TITLE                       TYPE        LVC_TITLE
 * | [--->] IV_REPORT                      TYPE        SYREPID
 * | [--->] IR_SALV                        TYPE REF TO DATA
+* | [--->] IT_COL_SETTING                 TYPE        YCOL_SETTING_T(optional)
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD show_salv.
 
@@ -114,7 +169,7 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
     set_functions( ).
 
 * Set default columns setting
-    set_columns( ).
+    set_columns( it_col_setting = it_col_setting ).
 
 * Set default display setting
     set_display( iv_title  = iv_title

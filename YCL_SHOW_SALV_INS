@@ -9,12 +9,17 @@ public section.
       !IV_TITLE type LVC_TITLE
       !IV_REPORT type SYREPID
       !IR_SALV type ref to DATA
-      !IT_COL_SETTING type YCOL_SETTING_T optional .
+      !IT_COL_SETTING type YCOL_SETTING_T optional
+      !IV_PFSTATUS type SYPFKEY optional .
   methods ON_LINK_CLICK
     for event LINK_CLICK of CL_SALV_EVENTS_TABLE
     importing
       !ROW
       !COLUMN .
+  methods ON_USER_COMMAND
+    for event ADDED_FUNCTION of CL_SALV_EVENTS_TABLE
+    importing
+      !E_SALV_FUNCTION .
   methods GET_DATA
     returning
       value(RO_DATA) type ref to DATA .
@@ -61,6 +66,17 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 * | [--->] COLUMN                         LIKE
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD on_link_click.
+* method abstract
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_SHOW_SALV_INS->ON_USER_COMMAND
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] E_SALV_FUNCTION                LIKE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD on_user_command.
 * method abstract
 
   ENDMETHOD.
@@ -181,7 +197,9 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 
     ENDTRY.
 
-    SET HANDLER on_link_click FOR go_salv_table->get_event( ).
+    SET HANDLER:
+      on_link_click   FOR go_salv_table->get_event( ),
+      on_user_command FOR go_salv_table->get_event( ).
 
   ENDMETHOD.
 
@@ -193,11 +211,19 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 * | [--->] IV_REPORT                      TYPE        SYREPID
 * | [--->] IR_SALV                        TYPE REF TO DATA
 * | [--->] IT_COL_SETTING                 TYPE        YCOL_SETTING_T(optional)
+* | [--->] IV_PFSTATUS                    TYPE        SYPFKEY(optional)
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD show_salv.
 
 * Set SALV Framework
     set_salv_framework( ir_salv = ir_salv ).
+
+* include own functions by setting own status
+    IF iv_pfstatus IS NOT INITIAL.
+      go_salv_table->set_screen_status( pfstatus      = iv_pfstatus
+                                        report        = iv_report
+                                        set_functions = go_salv_table->c_functions_all ).
+    ENDIF.
 
 * Set default functions setting
     set_functions( ).

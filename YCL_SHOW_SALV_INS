@@ -223,6 +223,9 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
       go_salv_table->set_screen_status( pfstatus      = iv_pfstatus
                                         report        = iv_report
                                         set_functions = go_salv_table->c_functions_all ).
+                                        
+      DATA(lo_selection) = go_salv_table->get_selections( ).
+      lo_selection->set_selection_mode( cl_salv_selections=>multiple ).
     ENDIF.
 
 * Set default functions setting

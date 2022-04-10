@@ -8,6 +8,7 @@ public section.
     importing
       !IV_TITLE type LVC_TITLE
       !IV_REPORT type SYREPID
+      !IV_VARIANT type SLIS_VARI optional
       !IR_SALV type ref to DATA
       !IT_COL_SETTING type YCOL_SETTING_T optional .
   PROTECTED SECTION.
@@ -25,7 +26,8 @@ private section.
   class-methods SET_DISPLAY
     importing
       !IV_TITLE type LVC_TITLE
-      !IV_REPORT type SYREPID .
+      !IV_REPORT type SYREPID
+      !IV_VARIANT type SLIS_VARI .
 ENDCLASS.
 
 
@@ -89,6 +91,7 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_TITLE                       TYPE        LVC_TITLE
 * | [--->] IV_REPORT                      TYPE        SYREPID
+* | [--->] IV_VARIANT                     TYPE        SLIS_VARI
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_display.
 
@@ -111,6 +114,10 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
     lo_layout->set_key( ls_key ).
     lo_layout->set_save_restriction( if_salv_c_layout=>restrict_none ).
     lo_layout->set_default( value = abap_true ).
+
+    IF iv_variant IS NOT INITIAL.
+      lo_layout->set_initial_layout( value =  iv_variant ).
+    ENDIF.
 
   ENDMETHOD.
 
@@ -157,6 +164,7 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_TITLE                       TYPE        LVC_TITLE
 * | [--->] IV_REPORT                      TYPE        SYREPID
+* | [--->] IV_VARIANT                     TYPE        SLIS_VARI(optional)
 * | [--->] IR_SALV                        TYPE REF TO DATA
 * | [--->] IT_COL_SETTING                 TYPE        YCOL_SETTING_T(optional)
 * +--------------------------------------------------------------------------------------</SIGNATURE>
@@ -172,8 +180,9 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
     set_columns( it_col_setting = it_col_setting ).
 
 * Set default display setting
-    set_display( iv_title  = iv_title
-                 iv_report = iv_report ).
+    set_display( iv_title   = iv_title
+                 iv_report  = iv_report
+                 iv_variant = iv_variant ).
 
 * Display SALV
     go_salv_table->display( ).

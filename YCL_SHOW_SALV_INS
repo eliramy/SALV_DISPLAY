@@ -8,6 +8,7 @@ public section.
     importing
       !IV_TITLE type LVC_TITLE
       !IV_REPORT type SYREPID
+      !IV_VARIANT type SLIS_VARI optional
       !IR_SALV type ref to DATA
       !IT_COL_SETTING type YCOL_SETTING_T optional
       !IV_PFSTATUS type SYPFKEY optional .
@@ -23,6 +24,9 @@ public section.
   methods GET_DATA
     returning
       value(RO_DATA) type ref to DATA .
+  methods GET_SALV
+    returning
+      value(RO_SALV_TABLE) type ref to CL_SALV_TABLE .
 protected section.
 private section.
 
@@ -39,7 +43,8 @@ private section.
   methods SET_DISPLAY
     importing
       !IV_TITLE type LVC_TITLE
-      !IV_REPORT type SYREPID .
+      !IV_REPORT type SYREPID
+      !IV_VARIANT type SLIS_VARI .
 ENDCLASS.
 
 
@@ -55,6 +60,18 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
   METHOD get_data.
 
     ro_data = go_data.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_SHOW_SALV_INS->GET_SALV
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RO_SALV_TABLE                  TYPE REF TO CL_SALV_TABLE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_salv.
+
+    ro_salv_table = go_salv_table.
 
   ENDMETHOD.
 
@@ -146,6 +163,7 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_TITLE                       TYPE        LVC_TITLE
 * | [--->] IV_REPORT                      TYPE        SYREPID
+* | [--->] IV_VARIANT                     TYPE        SLIS_VARI
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_display.
 
@@ -161,6 +179,10 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
     lo_layout->set_save_restriction( if_salv_c_layout=>restrict_none ).
     lo_layout->set_default( value = abap_true ).
 
+    IF iv_variant IS NOT INITIAL.
+      lo_layout->set_initial_layout( value = iv_variant ).
+    ENDIF.
+
   ENDMETHOD.
 
 
@@ -172,6 +194,8 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 
     DATA(lo_functions) = go_salv_table->get_functions( ).
     lo_functions->set_all( if_salv_c_bool_sap=>true ).
+    lo_functions->set_view_lotus( abap_false ).  "Lotus 123 off
+    lo_functions->set_graphics( abap_false ).    "Graph tool off
 
   ENDMETHOD.
 
@@ -209,6 +233,7 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_TITLE                       TYPE        LVC_TITLE
 * | [--->] IV_REPORT                      TYPE        SYREPID
+* | [--->] IV_VARIANT                     TYPE        SLIS_VARI(optional)
 * | [--->] IR_SALV                        TYPE REF TO DATA
 * | [--->] IT_COL_SETTING                 TYPE        YCOL_SETTING_T(optional)
 * | [--->] IV_PFSTATUS                    TYPE        SYPFKEY(optional)
@@ -223,7 +248,7 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
       go_salv_table->set_screen_status( pfstatus      = iv_pfstatus
                                         report        = iv_report
                                         set_functions = go_salv_table->c_functions_all ).
-                                        
+
       DATA(lo_selection) = go_salv_table->get_selections( ).
       lo_selection->set_selection_mode( cl_salv_selections=>multiple ).
     ENDIF.
@@ -236,7 +261,8 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 
 * Set default display setting
     set_display( iv_title  = iv_title
-                 iv_report = iv_report ).
+                 iv_report = iv_report
+                 iv_variant = iv_variant ).
 
 * Display SALV
     go_salv_table->display( ).

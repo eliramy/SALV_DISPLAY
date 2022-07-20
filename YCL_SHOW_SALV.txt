@@ -147,6 +147,14 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
     FIELD-SYMBOLS:
     <fs_tab> TYPE ANY TABLE.
 
+    FREE:
+     go_data,
+     go_salv_table.
+
+    CLEAR:
+      go_data,
+      go_salv_table.
+
     ASSIGN ir_salv->* TO <fs_tab>.
 
     TRY.

@@ -217,6 +217,7 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
     CLEAR:
       go_data,
       go_salv_table.
+      
     go_data = ir_salv.
 
     ASSIGN ir_salv->* TO <fs_tab>.

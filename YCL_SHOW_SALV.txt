@@ -1,33 +1,33 @@
-class YCL_SHOW_SALV definition
-  public
-  create public .
+CLASS ycl_show_salv DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  class-methods SHOW_SALV
-    importing
-      !IV_TITLE type LVC_TITLE
-      !IV_REPORT type SYREPID
-      !IV_VARIANT type SLIS_VARI optional
-      !IR_SALV type ref to DATA
-      !IT_COL_SETTING type YCOL_SETTING_T optional .
+    CLASS-METHODS show_salv
+      IMPORTING
+        !iv_title       TYPE lvc_title
+        !iv_report      TYPE syrepid
+        !iv_variant     TYPE slis_vari OPTIONAL
+        !ir_salv        TYPE REF TO data
+        !it_col_setting TYPE ycol_setting_t OPTIONAL .
   PROTECTED SECTION.
-private section.
+  PRIVATE SECTION.
 
-  class-data GO_SALV_TABLE type ref to CL_SALV_TABLE .
+    CLASS-DATA go_salv_table TYPE REF TO cl_salv_table .
 
-  class-methods SET_SALV_FRAMEWORK
-    importing
-      !IR_SALV type DATA .
-  class-methods SET_FUNCTIONS .
-  class-methods SET_COLUMNS
-    importing
-      !IT_COL_SETTING type YCOL_SETTING_T .
-  class-methods SET_DISPLAY
-    importing
-      !IV_TITLE type LVC_TITLE
-      !IV_REPORT type SYREPID
-      !IV_VARIANT type SLIS_VARI .
+    CLASS-METHODS set_salv_framework
+      IMPORTING
+        !ir_salv TYPE data .
+    CLASS-METHODS set_functions .
+    CLASS-METHODS set_columns
+      IMPORTING
+        !it_col_setting TYPE ycol_setting_t .
+    CLASS-METHODS set_display
+      IMPORTING
+        !iv_title   TYPE lvc_title
+        !iv_report  TYPE syrepid
+        !iv_variant TYPE slis_vari .
 ENDCLASS.
 
 
@@ -80,6 +80,9 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
           EXPORTING
             value = <fs_col_setting>-alignment.
       ENDIF.
+
+* Set color
+      lo_column->set_color( <fs_col_setting>-color ).
 
     ENDLOOP.
 

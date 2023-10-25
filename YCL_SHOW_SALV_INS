@@ -1,51 +1,53 @@
-CLASS ycl_show_salv_ins DEFINITION
-  PUBLIC
-  ABSTRACT
-  CREATE PUBLIC .
+class YCL_SHOW_SALV_INS definition
+  public
+  abstract
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    METHODS show_salv
-      IMPORTING
-        !iv_title       TYPE lvc_title
-        !iv_report      TYPE syrepid
-        !iv_variant     TYPE slis_vari OPTIONAL
-        !ir_salv        TYPE REF TO data
-        !it_col_setting TYPE ycol_setting_t OPTIONAL
-        !iv_pfstatus    TYPE sypfkey OPTIONAL .
-    METHODS on_link_click
-          FOR EVENT link_click OF cl_salv_events_table
-      IMPORTING
-          !row
-          !column .
-    METHODS on_user_command
-          FOR EVENT added_function OF cl_salv_events_table
-      IMPORTING
-          !e_salv_function .
-    METHODS get_data
-      RETURNING
-        VALUE(ro_data) TYPE REF TO data .
-    METHODS get_salv
-      RETURNING
-        VALUE(ro_salv_table) TYPE REF TO cl_salv_table .
+  methods SHOW_SALV
+    importing
+      !IV_TITLE type LVC_TITLE
+      !IV_REPORT type SYREPID
+      !IV_VARIANT type SLIS_VARI optional
+      !IV_HANDLE type SLIS_HANDL optional
+      !IR_SALV type ref to DATA
+      !IT_COL_SETTING type YCOL_SETTING_T optional
+      !IV_PFSTATUS type SYPFKEY optional .
+  methods ON_LINK_CLICK
+    for event LINK_CLICK of CL_SALV_EVENTS_TABLE
+    importing
+      !ROW
+      !COLUMN .
+  methods ON_USER_COMMAND
+    for event ADDED_FUNCTION of CL_SALV_EVENTS_TABLE
+    importing
+      !E_SALV_FUNCTION .
+  methods GET_DATA
+    returning
+      value(RO_DATA) type ref to DATA .
+  methods GET_SALV
+    returning
+      value(RO_SALV_TABLE) type ref to CL_SALV_TABLE .
   PROTECTED SECTION.
-  PRIVATE SECTION.
+private section.
 
-    DATA go_salv_table TYPE REF TO cl_salv_table .
-    DATA go_data TYPE REF TO data .
+  data GO_SALV_TABLE type ref to CL_SALV_TABLE .
+  data GO_DATA type ref to DATA .
 
-    METHODS set_salv_framework
-      IMPORTING
-        !ir_salv TYPE data .
-    METHODS set_functions .
-    METHODS set_columns
-      IMPORTING
-        !it_col_setting TYPE ycol_setting_t .
-    METHODS set_display
-      IMPORTING
-        !iv_title   TYPE lvc_title
-        !iv_report  TYPE syrepid
-        !iv_variant TYPE slis_vari .
+  methods SET_SALV_FRAMEWORK
+    importing
+      !IR_SALV type DATA .
+  methods SET_FUNCTIONS .
+  methods SET_COLUMNS
+    importing
+      !IT_COL_SETTING type YCOL_SETTING_T .
+  methods SET_DISPLAY
+    importing
+      !IV_TITLE type LVC_TITLE
+      !IV_REPORT type SYREPID
+      !IV_VARIANT type SLIS_VARI
+      !IV_HANDLE type SLIS_HANDL .
 ENDCLASS.
 
 
@@ -154,6 +156,10 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
             value = <fs_col_setting>-alignment.
       ENDIF.
 
+      IF <fs_col_setting>-dec IS NOT INITIAL.
+        lo_column->set_decimals( value = <fs_col_setting>-dec ).
+      ENDIF.
+
 * Set color
       lo_column->set_color( <fs_col_setting>-color ).
 
@@ -168,6 +174,7 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 * | [--->] IV_TITLE                       TYPE        LVC_TITLE
 * | [--->] IV_REPORT                      TYPE        SYREPID
 * | [--->] IV_VARIANT                     TYPE        SLIS_VARI
+* | [--->] IV_HANDLE                      TYPE        SLIS_HANDL
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_display.
 
@@ -179,7 +186,9 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 * Layout setting
     DATA(lo_layout) = go_salv_table->get_layout( ).
 
-    lo_layout->set_key( VALUE salv_s_layout_key( report = iv_report )  ).
+    lo_layout->set_key( VALUE salv_s_layout_key( report = iv_report
+                                                 handle = iv_handle ) ).
+
     lo_layout->set_save_restriction( if_salv_c_layout=>restrict_none ).
     lo_layout->set_default( value = abap_true ).
 
@@ -246,6 +255,7 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 * | [--->] IV_TITLE                       TYPE        LVC_TITLE
 * | [--->] IV_REPORT                      TYPE        SYREPID
 * | [--->] IV_VARIANT                     TYPE        SLIS_VARI(optional)
+* | [--->] IV_HANDLE                      TYPE        SLIS_HANDL(optional)
 * | [--->] IR_SALV                        TYPE REF TO DATA
 * | [--->] IT_COL_SETTING                 TYPE        YCOL_SETTING_T(optional)
 * | [--->] IV_PFSTATUS                    TYPE        SYPFKEY(optional)
@@ -272,9 +282,10 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
     set_columns( it_col_setting = it_col_setting ).
 
 * Set default display setting
-    set_display( iv_title  = iv_title
-                 iv_report = iv_report
-                 iv_variant = iv_variant ).
+    set_display( iv_title   = iv_title
+                 iv_report  = iv_report
+                 iv_variant = iv_variant
+                 iv_handle  = iv_handle ).
 
 * Display SALV
     go_salv_table->display( ).

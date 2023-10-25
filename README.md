@@ -9,6 +9,6 @@ Option2 file: YCL_SHOW_SALV_INS -> Abstract Class Inherit this class and do Rede
 Gernal Info. :
 From SAP Netweaver 7.0 & above (Include S/4 HANA)
 
-fill parameter - > IR_SALV type ref to DATA -> Example internal table convert -> GET REFERENCE OF gt_tab INTO IR_SALV.
+fill parameter - > IR_SALV type ref to DATA -> Example internal table convert -> ref #( gt_tab ) or old syntax GET REFERENCE OF gt_tab INTO IR_SALV.
 
 Enjoy :)

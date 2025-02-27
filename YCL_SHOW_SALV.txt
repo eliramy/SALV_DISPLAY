@@ -48,27 +48,35 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
       <fs_col_setting> TYPE ycol_setting_s.
 
     DATA:
-      lo_column  TYPE REF TO cl_salv_column_table,
-      lo_columns TYPE REF TO cl_salv_columns_table.
+      lo_column TYPE REF TO cl_salv_column_table.
 
-    lo_columns = go_salv_table->get_columns( ). "Get columns setting
-    lo_columns->set_optimize( ).                "Set optimize columns
+    DATA(lo_columns) = go_salv_table->get_columns( ).           "Get columns setting
+    lo_columns->set_optimize( ).                                "Set optimize columns
+    DATA(lo_aggregations) = go_salv_table->get_aggregations( ). "Get ALV Aggregations
 
     LOOP AT it_col_setting ASSIGNING <fs_col_setting>.
 
-      lo_column ?= lo_columns->get_column( <fs_col_setting>-col ).
+      TRY.
+          lo_column ?= lo_columns->get_column( <fs_col_setting>-col ).
 
+        CATCH cx_salv_not_found.
+
+      ENDTRY.
+
+* Hide technical column
       CASE <fs_col_setting>-tech.
         WHEN abap_true.
           lo_column->set_technical( if_salv_c_bool_sap=>true ).
       ENDCASE.
 
+* Hide column
       CASE <fs_col_setting>-hide.
         WHEN abap_true.
           lo_column->set_visible( if_salv_c_bool_sap=>false ).
 
       ENDCASE.
 
+* Set leading zero
       CASE <fs_col_setting>-zero.
         WHEN abap_true.
           lo_column->set_zero( value = abap_true ).
@@ -77,10 +85,25 @@ CLASS YCL_SHOW_SALV IMPLEMENTATION.
           lo_column->set_zero( value = abap_false ).
       ENDCASE.
 
+* Set alignment
       IF <fs_col_setting>-alignment IS NOT INITIAL.
-        CALL METHOD lo_column->set_alignment
-          EXPORTING
-            value = <fs_col_setting>-alignment.
+        lo_column->set_alignment( value = <fs_col_setting>-alignment ).
+      ENDIF.
+
+* Set total sum
+      IF <fs_col_setting>-sum_total = abap_true.
+        TRY.
+            lo_aggregations->add_aggregation(
+              EXPORTING
+                columnname  = <fs_col_setting>-col            " ALV Control: Field Name of Internal Table Field
+                aggregation = if_salv_c_aggregation=>total ). " Aggregation
+
+          CATCH cx_salv_data_error.
+          CATCH cx_salv_not_found.
+          CATCH cx_salv_existing.
+
+        ENDTRY.
+
       ENDIF.
 
 * Set color

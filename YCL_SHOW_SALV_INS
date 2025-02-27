@@ -1,34 +1,34 @@
-class YCL_SHOW_SALV_INS definition
-  public
-  abstract
-  create public .
+CLASS ycl_show_salv_ins DEFINITION
+  PUBLIC
+  ABSTRACT
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  methods SHOW_SALV
-    importing
-      !IV_TITLE type LVC_TITLE
-      !IV_REPORT type SYREPID
-      !IV_VARIANT type SLIS_VARI optional
-      !IV_HANDLE type SLIS_HANDL optional
-      !IR_SALV type ref to DATA
-      !IT_COL_SETTING type YCOL_SETTING_T optional
-      !IV_PFSTATUS type SYPFKEY optional .
-  methods ON_LINK_CLICK
-    for event LINK_CLICK of CL_SALV_EVENTS_TABLE
-    importing
-      !ROW
-      !COLUMN .
-  methods ON_USER_COMMAND
-    for event ADDED_FUNCTION of CL_SALV_EVENTS_TABLE
-    importing
-      !E_SALV_FUNCTION .
-  methods GET_DATA
-    returning
-      value(RO_DATA) type ref to DATA .
-  methods GET_SALV
-    returning
-      value(RO_SALV_TABLE) type ref to CL_SALV_TABLE .
+    METHODS show_salv
+      IMPORTING
+        !iv_title       TYPE lvc_title
+        !iv_report      TYPE syrepid
+        !iv_variant     TYPE slis_vari OPTIONAL
+        !iv_handle      TYPE slis_handl OPTIONAL
+        !ir_salv        TYPE REF TO data
+        !it_col_setting TYPE ycol_setting_t OPTIONAL
+        !iv_pfstatus    TYPE sypfkey OPTIONAL .
+    METHODS on_link_click
+          FOR EVENT link_click OF cl_salv_events_table
+      IMPORTING
+          !row
+          !column .
+    METHODS on_user_command
+          FOR EVENT added_function OF cl_salv_events_table
+      IMPORTING
+          !e_salv_function .
+    METHODS get_data
+      RETURNING
+        VALUE(ro_data) TYPE REF TO data .
+    METHODS get_salv
+      RETURNING
+        VALUE(ro_salv_table) TYPE REF TO cl_salv_table .
   PROTECTED SECTION.
 private section.
 
@@ -86,7 +86,34 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 * | [--->] COLUMN                         LIKE
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD on_link_click.
-* method abstract
+
+*    FIELD-SYMBOLS:  <fs_tab> TYPE table.
+
+*    DATA(lo_data) = me->get_data( ).
+
+*    ASSIGN lo_data->* TO <fs_tab>.
+
+*    READ TABLE <fs_tab> ASSIGNING FIELD-SYMBOL(<fs_line>) INDEX row.
+*    CHECK sy-subrc = 0.
+
+*    CASE column.
+*      WHEN 'REQUEST_NO'.
+
+*        FIELD-SYMBOLS:
+*          <fs_field> TYPE any.
+
+*        DATA(lv_field) = '<FS_LINE>-' && column.
+*        ASSIGN (lv_field) TO <fs_field>.
+
+*        IF <fs_field> IS NOT INITIAL.
+
+*          SET PARAMETER ID 'YCO_BT_REQ' FIELD <fs_field>.
+*          CALL TRANSACTION 'YCO_BT3' AND SKIP FIRST SCREEN.
+
+*        ENDIF.
+
+*    ENDCASE.
+
 
   ENDMETHOD.
 
@@ -112,25 +139,34 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
     DATA:
       lo_column TYPE REF TO cl_salv_column_table.
 
-
-    DATA(lo_columns) = go_salv_table->get_columns( ). "Get columns setting
-    lo_columns->set_optimize( ).               "Set optimize columns
+    DATA(lo_columns) = go_salv_table->get_columns( ).           "Get columns setting
+    lo_columns->set_optimize( ).                                "Set optimize columns
+    DATA(lo_aggregations) = go_salv_table->get_aggregations( ). "Get ALV Aggregations
 
     LOOP AT it_col_setting ASSIGNING FIELD-SYMBOL(<fs_col_setting>).
 
-      lo_column ?= lo_columns->get_column( <fs_col_setting>-col ).
+      TRY.
 
+          lo_column ?= lo_columns->get_column( <fs_col_setting>-col ).
+
+        CATCH cx_salv_not_found.
+
+      ENDTRY.
+
+* Set hide technical column
       CASE <fs_col_setting>-tech.
         WHEN abap_true.
           lo_column->set_technical( if_salv_c_bool_sap=>true ).
       ENDCASE.
 
+* Set hide column
       CASE <fs_col_setting>-hide.
         WHEN abap_true.
           lo_column->set_visible( if_salv_c_bool_sap=>false ).
 
       ENDCASE.
 
+* Set leading zero
       CASE <fs_col_setting>-zero.
         WHEN abap_true.
           lo_column->set_zero( value = abap_true ).
@@ -139,6 +175,7 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
           lo_column->set_zero( value = abap_false ).
       ENDCASE.
 
+* Set hotspot - double click column
       CASE <fs_col_setting>-hotspot.
         WHEN abap_true.
           TRY.
@@ -150,6 +187,7 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
           ENDTRY.
       ENDCASE.
 
+*Set alignment
       IF <fs_col_setting>-alignment IS NOT INITIAL.
         CALL METHOD lo_column->set_alignment
           EXPORTING
@@ -158,6 +196,22 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 
       IF <fs_col_setting>-dec IS NOT INITIAL.
         lo_column->set_decimals( value = <fs_col_setting>-dec ).
+      ENDIF.
+
+* Set total sum
+      IF <fs_col_setting>-sum_total = abap_true.
+        TRY.
+            lo_aggregations->add_aggregation(
+              EXPORTING
+                columnname  = <fs_col_setting>-col            " ALV Control: Field Name of Internal Table Field
+                aggregation = if_salv_c_aggregation=>total ). " Aggregation
+
+          CATCH cx_salv_data_error.
+          CATCH cx_salv_not_found.
+          CATCH cx_salv_existing.
+
+        ENDTRY.
+
       ENDIF.
 
 * Set color

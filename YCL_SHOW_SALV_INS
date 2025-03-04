@@ -153,6 +153,9 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 
       ENDTRY.
 
+* Set on/off Key field
+      lo_column->set_key( <fs_col_setting>-key ).
+
 * Set hide technical column
       CASE <fs_col_setting>-tech.
         WHEN abap_true.

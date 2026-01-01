@@ -1,35 +1,36 @@
-CLASS ycl_show_salv_ins DEFINITION
-  PUBLIC
-  ABSTRACT
-  CREATE PUBLIC .
+class YCL_SHOW_SALV_INS definition
+  public
+  abstract
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    METHODS show_salv
-      IMPORTING
-        !iv_title       TYPE lvc_title
-        !iv_report      TYPE syrepid
-        !iv_variant     TYPE slis_vari OPTIONAL
-        !iv_handle      TYPE slis_handl OPTIONAL
-        !ir_salv        TYPE REF TO data
-        !it_col_setting TYPE ycol_setting_t OPTIONAL
-        !iv_pfstatus    TYPE sypfkey OPTIONAL .
-    METHODS on_link_click
-          FOR EVENT link_click OF cl_salv_events_table
-      IMPORTING
-          !row
-          !column .
-    METHODS on_user_command
-          FOR EVENT added_function OF cl_salv_events_table
-      IMPORTING
-          !e_salv_function .
-    METHODS get_data
-      RETURNING
-        VALUE(ro_data) TYPE REF TO data .
-    METHODS get_salv
-      RETURNING
-        VALUE(ro_salv_table) TYPE REF TO cl_salv_table .
-  PROTECTED SECTION.
+  methods SHOW_SALV
+    importing
+      !IV_TITLE type LVC_TITLE
+      !IV_REPORT type SYREPID
+      !IV_VARIANT type SLIS_VARI optional
+      !IV_HANDLE type SLIS_HANDL optional
+      !IR_SALV type ref to DATA
+      !IT_COL_SETTING type YCOL_SETTING_T optional
+      !IV_PFSTATUS type SYPFKEY optional
+      !IV_SELECT_ROW type XFELD default ABAP_FALSE .
+  methods ON_LINK_CLICK
+    for event LINK_CLICK of CL_SALV_EVENTS_TABLE
+    importing
+      !ROW
+      !COLUMN .
+  methods ON_USER_COMMAND
+    for event ADDED_FUNCTION of CL_SALV_EVENTS_TABLE
+    importing
+      !E_SALV_FUNCTION .
+  methods GET_DATA
+    returning
+      value(RO_DATA) type ref to DATA .
+  methods GET_SALV
+    returning
+      value(RO_SALV_TABLE) type ref to CL_SALV_TABLE .
+protected section.
 private section.
 
   data GO_SALV_TABLE type ref to CL_SALV_TABLE .
@@ -48,6 +49,9 @@ private section.
       !IV_REPORT type SYREPID
       !IV_VARIANT type SLIS_VARI
       !IV_HANDLE type SLIS_HANDL .
+  methods SET_SELECTION
+    importing
+      !IV_SELECT_ROW type XFELD .
 ENDCLASS.
 
 
@@ -87,32 +91,32 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD on_link_click.
 
-*    FIELD-SYMBOLS:  <fs_tab> TYPE table.
+    FIELD-SYMBOLS:  <fs_tab> TYPE table.
 
-*    DATA(lo_data) = me->get_data( ).
+    DATA(lo_data) = me->get_data( ).
 
-*    ASSIGN lo_data->* TO <fs_tab>.
+    ASSIGN lo_data->* TO <fs_tab>.
 
-*    READ TABLE <fs_tab> ASSIGNING FIELD-SYMBOL(<fs_line>) INDEX row.
-*    CHECK sy-subrc = 0.
+    READ TABLE <fs_tab> ASSIGNING FIELD-SYMBOL(<fs_line>) INDEX row.
+    CHECK sy-subrc = 0.
 
-*    CASE column.
-*      WHEN 'REQUEST_NO'.
+    CASE column.
+      WHEN 'REQUEST_NO'.
 
-*        FIELD-SYMBOLS:
-*          <fs_field> TYPE any.
+        FIELD-SYMBOLS:
+          <fs_field> TYPE any.
 
-*        DATA(lv_field) = '<FS_LINE>-' && column.
-*        ASSIGN (lv_field) TO <fs_field>.
+        DATA(lv_field) = '<FS_LINE>-' && column.
+        ASSIGN (lv_field) TO <fs_field>.
 
-*        IF <fs_field> IS NOT INITIAL.
+        IF <fs_field> IS NOT INITIAL.
 
-*          SET PARAMETER ID 'YCO_BT_REQ' FIELD <fs_field>.
-*          CALL TRANSACTION 'YCO_BT3' AND SKIP FIRST SCREEN.
+          SET PARAMETER ID 'YCO_BT_REQ' FIELD <fs_field>.
+          CALL TRANSACTION 'YCO_BT3' AND SKIP FIRST SCREEN.
 
-*        ENDIF.
+        ENDIF.
 
-*    ENDCASE.
+    ENDCASE.
 
 
   ENDMETHOD.
@@ -307,6 +311,21 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method YCL_SHOW_SALV_INS->SET_SELECTION
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_SELECT_ROW                  TYPE        XFELD
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_selection.
+
+    IF iv_select_row = abap_true.
+      DATA(lo_selections) = go_salv_table->get_selections( ).
+      lo_selections->set_selection_mode( if_salv_c_selection_mode=>row_column ).
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
 * | Instance Public Method YCL_SHOW_SALV_INS->SHOW_SALV
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_TITLE                       TYPE        LVC_TITLE
@@ -316,6 +335,7 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
 * | [--->] IR_SALV                        TYPE REF TO DATA
 * | [--->] IT_COL_SETTING                 TYPE        YCOL_SETTING_T(optional)
 * | [--->] IV_PFSTATUS                    TYPE        SYPFKEY(optional)
+* | [--->] IV_SELECT_ROW                  TYPE        XFELD (default =ABAP_FALSE)
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD show_salv.
 
@@ -331,6 +351,9 @@ CLASS YCL_SHOW_SALV_INS IMPLEMENTATION.
       DATA(lo_selection) = go_salv_table->get_selections( ).
       lo_selection->set_selection_mode( cl_salv_selections=>multiple ).
     ENDIF.
+
+* Set selection
+    set_selection( iv_select_row = iv_select_row ).
 
 * Set default functions setting
     set_functions( ).
